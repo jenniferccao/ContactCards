@@ -1,5 +1,5 @@
 
-import type { ColumnMapping, ContactField } from '../types/contact';
+import type { ContactField } from '../types/contact';
 
 
 const FILLER_WORDS = [

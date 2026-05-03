@@ -18,10 +18,19 @@ body,
 }
 
 body {
-    /* Soft white centre → medium lavender-periwinkle at edges */
-    background: linear-gradient(to bottom, #ffffff 0%, #dddcf8 45%, #c0bef5 100%);
-    background-attachment: fixed;
     min-height: 100vh;
     font-family: 'Tahoma', 'Geneva', sans-serif;
     -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Soft white centre → medium lavender-periwinkle at edges */
+    background: linear-gradient(to bottom, #ffffff 0%, #dddcf8 45%, #c0bef5 100%);
+    z-index: -1;
 }

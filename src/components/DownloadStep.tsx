@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import type { ColumnMapping } from '../types/contact';
 import { downloadVCF, generateVCF } from '../utils/generateVCard';
-import { btnPrimary, btnSecondary, btnText, NAVY } from '../styles/buttons';
+import { btnPrimary, btnSecondary, NAVY } from '../styles/buttons';
 import AppHeading from './AppHeading';
 import ProgressBar from './ProgressBar';
 
@@ -26,9 +26,10 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
       try {
         const mockFile = new File([''], 'test.vcf', { type: 'text/vcard' });
         if (navigator.canShare({ files: [mockFile] })) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setCanShare(true);
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }

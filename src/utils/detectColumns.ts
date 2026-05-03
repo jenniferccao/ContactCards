@@ -1,23 +1,7 @@
-// ---------------------------------------------------------------------------
-// detectColumns.ts — Robust, scoring-based column auto-detection
-// ---------------------------------------------------------------------------
-//
-// Strategy
-// --------
-// 1. Normalize every header: strip emojis/symbols, lowercase, remove filler
-//    words, collapse whitespace.
-// 2. Score each (field, header) pair by summing keyword match weights.
-// 3. For each field, pick the header with the highest score (ties broken by
-//    shortest header — shorter = less noise).
-// 4. Post-process: if both firstName AND lastName are confidently detected,
-//    clear fullName; if only one "name" column exists, prefer fullName.
-// ---------------------------------------------------------------------------
 
 import type { ColumnMapping, ContactField } from '../types/contact';
 
-// ── 1. Normalisation ────────────────────────────────────────────────────────
 
-/** Words that add no semantic value in form headers. */
 const FILLER_WORDS = [
   'your', 'please', 'enter', 'provide', 'give', 'type',
   'what', 'is', 'are', 'the', 'a', 'an',
@@ -27,14 +11,7 @@ const FILLER_WORDS = [
   'number', // removed as filler so "phone number" → "phone" not "phone number"
 ];
 
-/**
- * Normalise a raw header string for scoring:
- *  - strip emojis / non-ASCII symbols
- *  - lowercase + trim
- *  - remove punctuation
- *  - remove filler words
- *  - collapse whitespace
- */
+
 function normalize(raw: string): string {
   return raw
     // strip emoji and non-letter/digit/space characters
@@ -50,11 +27,7 @@ function normalize(raw: string): string {
     .join(' ');
 }
 
-/**
- * A lighter normalisation that keeps "full" and "number" so we can still
- * detect "full name" and "phone number" as compound phrases before filler
- * removal. Used only for phrase-level matching.
- */
+
 function normalizeLight(raw: string): string {
   return raw
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -63,7 +36,7 @@ function normalizeLight(raw: string): string {
     .replace(/\s+/g, ' ');
 }
 
-// ── 2. Columns to always ignore ─────────────────────────────────────────────
+
 
 const IGNORE_PATTERNS = [
   /timestamp/,
@@ -85,19 +58,10 @@ function shouldIgnore(raw: string): boolean {
   return IGNORE_PATTERNS.some((re) => re.test(lc));
 }
 
-// ── 3. Scoring tables ───────────────────────────────────────────────────────
 
-/**
- * Each entry: [keyword, score].
- * Scored against the *normalised* header (filler removed).
- * Higher score = stronger signal.
- */
 type ScoredKeywords = [keyword: string, score: number][];
 
 const SCORES: Record<ContactField, ScoredKeywords> = {
-  // ── fullName ──────────────────────────────────────────────────────────────
-  // Phrase matching is done against the light-normalised string (before filler
-  // removal) so "full name" and "your name" still fire.
   fullName: [
     ['full name',          10],
     ['fullname',           10],
@@ -109,7 +73,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['name',                5],   // generic fallback
   ],
 
-  // ── firstName ─────────────────────────────────────────────────────────────
   firstName: [
     ['first name',         10],
     ['firstname',          10],
@@ -121,7 +84,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['given',               7],
   ],
 
-  // ── lastName ──────────────────────────────────────────────────────────────
   lastName: [
     ['last name',          10],
     ['lastname',           10],
@@ -134,7 +96,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['sur',                 6],
   ],
 
-  // ── email ─────────────────────────────────────────────────────────────────
   email: [
     ['email address',      10],
     ['email',               9],
@@ -143,7 +104,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['mail',                5],
   ],
 
-  // ── phone ─────────────────────────────────────────────────────────────────
   phone: [
     ['phone number',       10],
     ['mobile number',      10],
@@ -159,7 +119,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['call',                4],
   ],
 
-  // ── company ───────────────────────────────────────────────────────────────
   company: [
     ['company name',       10],
     ['organization name',  10],
@@ -176,9 +135,6 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['group',               7],
   ],
 
-  // ── title ────────────────────────────────────────────────────────────────
-  // "title" alone is a strong signal in spreadsheets; "job" is not a filler
-  // word so "job title" normalises to "job title" and scores cleanly.
   title: [
     ['job title',          10],
     ['jobtitle',           10],
@@ -192,12 +148,7 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
   ],
 };
 
-// ── 4. Penalty rules ────────────────────────────────────────────────────────
 
-/**
- * Subtract from a field's score when the header contains these tokens.
- * Prevents "First Name" from matching fullName.
- */
 const PENALTIES: Partial<Record<ContactField, string[]>> = {
   fullName: ['first', 'last', 'given', 'family', 'surname', 'fname', 'lname'],
   firstName: ['last', 'family', 'surname'],
@@ -206,7 +157,7 @@ const PENALTIES: Partial<Record<ContactField, string[]>> = {
 
 const PENALTY_AMOUNT = 8;
 
-// ── 5. Score one (field, header) pair ───────────────────────────────────────
+
 
 function scoreHeader(field: ContactField, raw: string): number {
   if (shouldIgnore(raw)) return 0;
@@ -233,7 +184,7 @@ function scoreHeader(field: ContactField, raw: string): number {
   return Math.max(score, 0);
 }
 
-// ── 6. Pick best header per field ───────────────────────────────────────────
+
 
 const MIN_SCORE = 5; // below this threshold → no match
 
@@ -260,8 +211,6 @@ function pickBest(
   return bestHeader;
 }
 
-// ── 7. Public API ────────────────────────────────────────────────────────────
-
 export interface DetectionResult {
   firstName: string | null;
   lastName:  string | null;
@@ -272,12 +221,6 @@ export interface DetectionResult {
   title:     string | null;
 }
 
-/**
- * Auto-detect which spreadsheet column header best matches each ContactField.
- *
- * Returns null for any field that cannot be confidently detected.
- * The mapping UI lets the user correct mistakes.
- */
 export function detectColumns(headers: string[]): DetectionResult {
   // Score all six fields independently (greedy top-pick per field)
   const taken = new Set<string>(); // headers already claimed
@@ -333,9 +276,7 @@ export function detectColumns(headers: string[]): DetectionResult {
   };
 }
 
-// ── 8. UI metadata ───────────────────────────────────────────────────────────
 
-/** All ContactField keys in the order they should appear in the mapping UI. */
 export const CONTACT_FIELDS: ContactField[] = [
   'firstName',
   'lastName',
@@ -346,7 +287,6 @@ export const CONTACT_FIELDS: ContactField[] = [
   'title',
 ];
 
-/** Human-readable labels for each ContactField, used in the mapping UI. */
 export const FIELD_LABELS: Record<ContactField, string> = {
   firstName: 'First Name',
   lastName:  'Last Name',

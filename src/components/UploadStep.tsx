@@ -1,9 +1,7 @@
-// ---------------------------------------------------------------------------
-// UploadStep.tsx — Step 1: File type selection + upload
-// ---------------------------------------------------------------------------
 
 import React, { useRef, useState } from 'react';
 import AppHeading from './AppHeading';
+import ProgressBar from './ProgressBar';
 import { parseSpreadsheet } from '../utils/parseSpreadsheet';
 import type { ParseResult } from '../utils/parseSpreadsheet';
 import { btnPill, NAVY } from '../styles/buttons';
@@ -49,12 +47,13 @@ const UploadStep: React.FC<UploadStepProps> = ({ onParsed }) => {
         >
           1. Select spreadsheet type &amp; upload
         </p>
+        <ProgressBar currentStep="upload" />
 
-        {/* Hidden file inputs */}
+
         <input ref={csvRef} type="file" accept=".csv" className="hidden" onChange={onCsvChange} />
         <input ref={xlsxRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={onXlsxChange} />
 
-        {/* Format buttons */}
+
         <div className="flex items-center gap-4">
           <button
             id="btn-csv"
@@ -77,23 +76,24 @@ const UploadStep: React.FC<UploadStepProps> = ({ onParsed }) => {
         </div>
 
         {error && (
-          <p className="text-xs font-medium" style={{ color: '#c0392b' }}>
+          <p className="text-xs font-medium" style={{
+            color: '#d14163ff'
+          }}>
             {error}
           </p>
         )}
 
-        {/* Formatting tip */}
+
         <p
-          className="text-xs text-center leading-relaxed max-w-xs"
+          className="text-xs text-center leading-relaxed max-w-xs mt-4"
           style={{ color: NAVY, opacity: 0.6 }}
         >
           Your spreadsheet must have a header row as the first row.
           <br />
-          <br />
           ex. <em>First Name, Last Name, Email, Phone</em>.
         </p>
       </div>
-    </div>
+    </div >
   );
 };
 

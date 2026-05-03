@@ -1,12 +1,10 @@
-// ---------------------------------------------------------------------------
-// PreviewStep.tsx — Preview contact cards before downloading
-// ---------------------------------------------------------------------------
 
 import React from 'react';
 import type { ColumnMapping } from '../types/contact';
 import { rowToContact } from '../utils/generateVCard';
 import { btnPrimary, btnSecondary, NAVY } from '../styles/buttons';
 import AppHeading from './AppHeading';
+import ProgressBar from './ProgressBar';
 
 interface PreviewStepProps {
   rows: Record<string, string>[];
@@ -16,26 +14,24 @@ interface PreviewStepProps {
 }
 
 const PreviewStep: React.FC<PreviewStepProps> = ({ rows, mapping, onNext, onBack }) => {
-  // Take up to the first 3 valid rows to preview
-  const previewContacts = rows
+  const previewContacts = rows.slice(0, 3)
     .map((row) => rowToContact(row, mapping))
     .filter((c) => {
       const hasName = c.fullName || c.firstName || c.lastName;
       const hasContact = c.phone || c.email;
-      // Also filter out completely blank objects
-      const isBlank = Object.keys(c).length === 0;
-      return !isBlank && hasName && hasContact;
-    })
-    .slice(0, 3);
+      if (!c.fullName && !c.firstName && !c.lastName && !c.phone && !c.email) return false;
+      return hasName && hasContact;
+    });
 
   return (
     <div className="flex flex-col items-center gap-10">
-      <AppHeading />
+      <AppHeading compact />
 
       <div className="w-full max-w-sm flex flex-col gap-6">
         <p className="text-sm font-bold tracking-wide text-center" style={{ color: NAVY }}>
-          3. Preview contact cards
+          3. Preview contacts
         </p>
+        <ProgressBar currentStep="preview" />
 
         {previewContacts.length === 0 ? (
           <p className="text-xs text-center leading-relaxed" style={{ color: NAVY, opacity: 0.6 }}>
@@ -49,7 +45,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({ rows, mapping, onNext, onBack
                 <div
                   key={i}
                   className="rounded-2xl px-5 py-4 flex flex-col gap-1 text-left"
-                  style={{ background: 'rgba(255,255,255,0.55)', border: '1.5px solid rgba(13,13,94,0.12)' }}
+                  style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(13,13,94,0.12)' }}
                 >
                   <p className="text-base font-bold tracking-tight" style={{ color: NAVY }}>
                     {displayName || 'Unnamed Contact'}

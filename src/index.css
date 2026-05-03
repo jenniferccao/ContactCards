@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Global reset ──────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -18,12 +17,11 @@ body,
     width: 100%;
 }
 
-/* ── Lavender radial gradient background (matches screenshot) ──────────── */
 body {
     /* Soft white centre → medium lavender-periwinkle at edges */
-    background: linear-gradient(to top, #ffffff 0%, #dddcf8 45%, #c0bef5 100%);
+    background: linear-gradient(to bottom, #ffffff 0%, #dddcf8 45%, #c0bef5 100%);
     background-attachment: fixed;
     min-height: 100vh;
-    font-family: 'Space Mono', 'Courier New', monospace;
+    font-family: 'Tahoma', 'Geneva', sans-serif;
     -webkit-font-smoothing: antialiased;
 }

@@ -1,12 +1,10 @@
-// ---------------------------------------------------------------------------
-// DownloadStep.tsx — Step 3: Download the generated .vcf file
-// ---------------------------------------------------------------------------
 
 import React, { useState } from 'react';
 import type { ColumnMapping } from '../types/contact';
 import { downloadVCF } from '../utils/generateVCard';
 import { btnPrimary, btnSecondary, NAVY } from '../styles/buttons';
 import AppHeading from './AppHeading';
+import ProgressBar from './ProgressBar';
 
 interface DownloadStepProps {
   rows: Record<string, string>[];
@@ -38,8 +36,9 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
 
       <div className="w-full max-w-sm flex flex-col gap-6">
         <p className="text-sm font-bold tracking-wide text-center" style={{ color: NAVY }}>
-          4. Download contact cards
+          4. Download your contact cards
         </p>
+        <ProgressBar currentStep="download" />
 
         <div className="text-center text-sm" style={{ color: NAVY, opacity: 0.6 }}>
           {rows.length} row{rows.length !== 1 ? 's' : ''} ready to export
@@ -48,19 +47,19 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
         {exported !== null && (
           <div
             className="rounded-2xl px-5 py-4 flex flex-col items-center gap-1.5 text-center"
-            style={{ background: 'rgba(255,255,255,0.55)', border: '1.5px solid rgba(13,13,94,0.12)' }}
+            style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(13,13,94,0.12)' }}
           >
             <span
               className="text-2xl font-bold tracking-tight"
               style={{ color: NAVY }}
             >
-              {exported} contact{exported !== 1 ? 's' : ''} saved
+              {exported} contact{exported !== 1 ? 's' : ''} created
             </span>
             <span
               className="text-xs font-medium leading-relaxed"
               style={{ color: NAVY, opacity: 0.55 }}
             >
-              Open the .vcf file and share it in an iMessage group chat. Recipients will be able to save everyone at once.
+              Share the .vcf file in an iMessage group chat. Recipients will be able to save everyone at once.
             </span>
           </div>
         )}
@@ -78,7 +77,7 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
             className={btnPrimary}
             onClick={handleDownload}
           >
-            Download VCF
+            Download .VCF
           </button>
 
           <button

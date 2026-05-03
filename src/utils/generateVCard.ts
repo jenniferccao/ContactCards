@@ -1,10 +1,7 @@
-// ---------------------------------------------------------------------------
-// generateVCard.ts — vCard 3.0 generation from mapped spreadsheet rows
-// ---------------------------------------------------------------------------
 
 import type { Contact, ColumnMapping } from '../types/contact';
 
-// ── 1. Row → Contact ─────────────────────────────────────────────────────────
+
 
 /**
  * Extract a Contact from one spreadsheet row using the confirmed mapping.
@@ -40,7 +37,7 @@ export function rowToContact(
   return contact;
 }
 
-// ── 2. Validity checks ───────────────────────────────────────────────────────
+
 
 /** True if the row is effectively blank (all mapped values empty). */
 function isBlankRow(contact: Contact): boolean {
@@ -57,7 +54,7 @@ function hasContact(c: Contact): boolean {
   return Boolean(c.phone || c.email);
 }
 
-// ── 3. vCard text escaping ───────────────────────────────────────────────────
+
 
 /**
  * Escape a value for use in a vCard text property.
@@ -72,7 +69,7 @@ function esc(value: string): string {
     .replace(/\n/g, '\\n');
 }
 
-// ── 4. Contact → vCard string ────────────────────────────────────────────────
+
 
 /**
  * Serialise one Contact to a vCard 3.0 block.
@@ -123,7 +120,7 @@ export function contactToVCard(contact: Contact): string {
   return lines.join('\r\n');
 }
 
-// ── 5. Batch generation + download ───────────────────────────────────────────
+
 
 export interface GenerateResult {
   /** Number of contacts successfully written to the .vcf */

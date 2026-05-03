@@ -1,12 +1,10 @@
-// ---------------------------------------------------------------------------
-// ColumnMappingStep.tsx — Step 2: Confirm / fix column → field mappings
-// ---------------------------------------------------------------------------
 
 import React, { useState } from 'react';
 import type { ColumnMapping, ContactField } from '../types/contact';
 import { CONTACT_FIELDS, FIELD_LABELS } from '../utils/detectColumns';
 import { btnPrimary, btnSecondary, btnRemove, NAVY } from '../styles/buttons';
 import AppHeading from './AppHeading';
+import ProgressBar from './ProgressBar';
 
 interface ColumnMappingStepProps {
   headers: string[];
@@ -15,33 +13,44 @@ interface ColumnMappingStepProps {
   onBack: () => void;
 }
 
-// ── Select style ──────────────────────────────────────────────────────────────
+
 
 const selectCls =
   'w-full px-4 py-3 rounded-xl text-sm font-medium ' +
-  'border-2 border-[#0d0d5e]/20 bg-white/60 ' +
+  'border border-[#0d0d5e]/20 bg-white/60 ' +
   'text-[#0d0d5e] appearance-none cursor-pointer ' +
   'focus:outline-none focus:border-[#0d0d5e]/60 ' +
   'transition-colors duration-150';
 
 const addSelectCls =
-  'w-full px-4 py-3 rounded-xl text-sm font-medium ' +
-  'border-2 border-dashed border-[#0d0d5e]/20 bg-transparent ' +
-  'text-[#0d0d5e]/50 appearance-none cursor-pointer ' +
-  'focus:outline-none focus:border-[#0d0d5e]/40 ' +
-  'transition-colors duration-150';
+  'w-48 px-4 py-2.5 rounded-xl text-xs font-bold text-center ' +
+  'bg-[#0d0d5e] text-white border border-transparent ' +
+  'appearance-none cursor-pointer ' +
+  'hover:opacity-90 active:scale-[0.98] ' +
+  'focus:outline-none transition-all duration-150';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 function initActiveFields(initialMapping: ColumnMapping): ContactField[] {
   const detected = CONTACT_FIELDS.filter((f) => !!initialMapping[f]);
   const extras: ContactField[] = [];
+
   const hasName = detected.some((f) =>
     ['firstName', 'lastName', 'fullName'].includes(f),
   );
-  if (!hasName)                    extras.push('fullName');
-  if (!detected.includes('email')) extras.push('email');
-  if (!detected.includes('phone')) extras.push('phone');
+  if (!hasName) extras.push('fullName');
+
+  const hasPhone = detected.includes('phone');
+  const hasEmail = detected.includes('email');
+
+  // If neither contact method is detected, prompt for both so the user
+  // knows they are needed. If at least one is detected, do not force
+  // the other to appear as a skipped field.
+  if (!hasPhone && !hasEmail) {
+    extras.push('phone');
+    extras.push('email');
+  }
+
   const combined = new Set([...detected, ...extras]);
   return CONTACT_FIELDS.filter((f) => combined.has(f));
 }
@@ -56,7 +65,7 @@ function validate(mapping: ColumnMapping): string | null {
   return null;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+
 
 const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
   headers,
@@ -64,7 +73,7 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
   onConfirm,
   onBack,
 }) => {
-  const [mapping,      setMapping]      = useState<ColumnMapping>(initialMapping);
+  const [mapping, setMapping] = useState<ColumnMapping>(initialMapping);
   const [activeFields, setActiveFields] = useState<ContactField[]>(() =>
     initActiveFields(initialMapping),
   );
@@ -72,12 +81,11 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
 
   const handleChange = (field: ContactField, value: string) => {
     setError(null);
-    setMapping((prev) => {
-      const next = { ...prev };
-      if (value === '') delete next[field];
-      else next[field] = value;
-      return next;
-    });
+    if (value === '') {
+      handleRemove(field);
+    } else {
+      setMapping((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleRemove = (field: ContactField) => {
@@ -102,18 +110,18 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-10">
-      <AppHeading />
+      <AppHeading compact />
 
       <div className="w-full max-w-sm flex flex-col gap-6">
         <p className="text-sm font-bold tracking-wide text-center" style={{ color: NAVY }}>
           2. Confirm contact fields
         </p>
+        <ProgressBar currentStep="mapping" />
 
-        {/* No-detection warning — shown when the file had no recognisable headers */}
         {Object.keys(initialMapping).length === 0 && (
           <div
             className="rounded-2xl px-5 py-4 flex flex-col gap-3 text-center"
-            style={{ background: 'rgba(255,255,255,0.55)', border: '1.5px solid rgba(13,13,94,0.12)' }}
+            style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(13,13,94,0.12)' }}
           >
             <p className="text-sm font-semibold" style={{ color: NAVY }}>
               No columns detected
@@ -132,7 +140,6 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
           </div>
         )}
 
-        {/* Field rows */}
         <div className="flex flex-col gap-4">
           {activeFields.map((field) => (
             <div key={field} className="flex flex-col gap-1.5">
@@ -177,9 +184,8 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
             </div>
           ))}
 
-          {/* Add field */}
           {inactiveFields.length > 0 && (
-            <div className="relative">
+            <div className="relative flex justify-center mt-2">
               <select
                 value=""
                 onChange={(e) => { if (e.target.value) handleAdd(e.target.value as ContactField); }}
@@ -191,8 +197,8 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
                 ))}
               </select>
               <div
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm"
-                style={{ color: NAVY, opacity: 0.3 }}
+                className="pointer-events-none absolute right-1/2 -mr-[80px] top-1/2 -translate-y-1/2 text-xs"
+                style={{ color: 'white', opacity: 0.8 }}
               >
                 ▾
               </div>
@@ -201,7 +207,7 @@ const ColumnMappingStep: React.FC<ColumnMappingStepProps> = ({
         </div>
 
         {error && (
-          <p className="text-xs font-medium text-center" style={{ color: '#c0392b' }}>
+          <p className="text-xs font-medium text-center" style={{ color: '#d14163ff' }}>
             {error}
           </p>
         )}

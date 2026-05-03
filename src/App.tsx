@@ -71,8 +71,8 @@ const App: React.FC = () => {
 
   return (
 
-    <div className="min-h-screen flex items-center justify-center px-6 py-16">
-      <main className="w-full max-w-2xl mb-24 sm:mb-0">
+    <div className="min-h-screen flex items-start sm:items-center justify-center px-6 pt-12 pb-16 sm:py-16">
+      <main className="w-full max-w-2xl">
         {step === 'upload' && (
           <UploadStep onParsed={handleParsed} />
         )}

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import type { ColumnMapping } from '../types/contact';
-import { downloadVCF } from '../utils/generateVCard';
-import { btnPrimary, btnSecondary, NAVY } from '../styles/buttons';
+import { downloadVCF, generateVCF } from '../utils/generateVCard';
+import { btnPrimary, btnSecondary, btnText, NAVY } from '../styles/buttons';
 import AppHeading from './AppHeading';
 import ProgressBar from './ProgressBar';
 
@@ -19,6 +19,20 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [exported, setExported] = useState<number | null>(null);
+  const [canShare, setCanShare] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (navigator.canShare) {
+      try {
+        const mockFile = new File([''], 'test.vcf', { type: 'text/vcard' });
+        if (navigator.canShare({ files: [mockFile] })) {
+          setCanShare(true);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, []);
 
   const handleDownload = () => {
     setError(null);
@@ -27,6 +41,34 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
       setExported(result.exported);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate file.');
+    }
+  };
+
+  const handleShare = async () => {
+    setError(null);
+    try {
+      const result = generateVCF(rows, mapping);
+      const file = new File([result.vcfContent!], 'contacts.vcf', { type: 'text/vcard' });
+      
+      await navigator.share({
+        files: [file],
+        title: 'Contact Cards',
+      });
+      setExported(result.exported);
+    } catch (err) {
+      if (err instanceof DOMException) {
+        if (err.name === 'AbortError') {
+          // User cancelled share, don't show error
+          return;
+        }
+        if (err.name === 'NotAllowedError') {
+          // Browser (like macOS Chrome) blocked the share despite canShare returning true.
+          // Fallback to downloading instead.
+          handleDownload();
+          return;
+        }
+      }
+      setError(err instanceof Error ? err.message : 'Failed to share file.');
     }
   };
 
@@ -71,6 +113,17 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
         )}
 
         <div className="flex flex-col gap-3">
+          {canShare && (
+            <button
+              id="btn-share"
+              type="button"
+              className={btnPrimary}
+              onClick={handleShare}
+            >
+              Share via iMessage
+            </button>
+          )}
+
           <button
             id="btn-download"
             type="button"
@@ -86,7 +139,7 @@ const DownloadStep: React.FC<DownloadStepProps> = ({
             className={btnSecondary}
             onClick={onReset}
           >
-            Upload a different file
+            Upload a new sheet
           </button>
         </div>
       </div>

@@ -123,22 +123,14 @@ export function contactToVCard(contact: Contact): string {
 
 
 export interface GenerateResult {
-  /** Number of contacts successfully written to the .vcf */
   exported: number;
-  /** Number of rows skipped (blank / no name / no contact info) */
   skipped: number;
+  vcfContent?: string;
 }
 
-/**
- * Convert all rows to vCard 3.0, bundle them into a single .vcf Blob, and
- * trigger a browser download.
- *
- * @returns A summary of how many rows were exported vs skipped.
- */
-export function downloadVCF(
+export function generateVCF(
   rows: Record<string, string>[],
   mapping: ColumnMapping,
-  filename = 'contacts.vcf',
 ): GenerateResult {
   const cards: string[] = [];
   let skipped = 0;
@@ -159,8 +151,23 @@ export function downloadVCF(
     );
   }
 
-  // vCard files use CRLF line endings; blocks are separated by a blank line
   const vcfContent = cards.join('\r\n\r\n') + '\r\n';
+  return { exported: cards.length, skipped, vcfContent };
+}
+
+/**
+ * Convert all rows to vCard 3.0, bundle them into a single .vcf Blob, and
+ * trigger a browser download.
+ *
+ * @returns A summary of how many rows were exported vs skipped.
+ */
+export function downloadVCF(
+  rows: Record<string, string>[],
+  mapping: ColumnMapping,
+  filename = 'contacts.vcf',
+): GenerateResult {
+  const result = generateVCF(rows, mapping);
+  const vcfContent = result.vcfContent!;
 
   const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
@@ -176,5 +183,5 @@ export function downloadVCF(
   // Delay revoke slightly so the browser has time to initiate the download
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  return { exported: cards.length, skipped };
+  return result;
 }

@@ -11,7 +11,8 @@ export type ContactField =
   | 'fullName'
   | 'email'
   | 'phone'
-  | 'company';
+  | 'company'
+  | 'title';
 
 /**
  * A single parsed contact. Every field is optional because not every
@@ -24,6 +25,7 @@ export interface Contact {
   email?: string;
   phone?: string;
   company?: string;
+  title?: string;
 }
 
 /**
@@ -35,9 +37,9 @@ export interface Contact {
 export type ColumnMapping = Partial<Record<ContactField, string>>;
 
 /**
- * The three sequential steps in the app workflow.
+ * The sequential steps in the app workflow.
  */
-export type AppStep = 'upload' | 'mapping' | 'download';
+export type AppStep = 'upload' | 'mapping' | 'preview' | 'download';
 
 /**
  * Top-level application state passed between steps.

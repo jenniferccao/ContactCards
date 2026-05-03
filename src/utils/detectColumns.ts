@@ -175,6 +175,21 @@ const SCORES: Record<ContactField, ScoredKeywords> = {
     ['team',                7],
     ['group',               7],
   ],
+
+  // ── title ────────────────────────────────────────────────────────────────
+  // "title" alone is a strong signal in spreadsheets; "job" is not a filler
+  // word so "job title" normalises to "job title" and scores cleanly.
+  title: [
+    ['job title',          10],
+    ['jobtitle',           10],
+    ['position',            9],
+    ['designation',         9],
+    ['occupation',          8],
+    ['profession',          8],
+    ['role',                8],
+    ['job',                 7],
+    ['title',               9],
+  ],
 };
 
 // ── 4. Penalty rules ────────────────────────────────────────────────────────
@@ -254,6 +269,7 @@ export interface DetectionResult {
   phone:     string | null;
   email:     string | null;
   company:   string | null;
+  title:     string | null;
 }
 
 /**
@@ -270,6 +286,7 @@ export function detectColumns(headers: string[]): DetectionResult {
   const order: ContactField[] = [
     'email',
     'phone',
+    'title',
     'company',
     'firstName',
     'lastName',
@@ -312,6 +329,7 @@ export function detectColumns(headers: string[]): DetectionResult {
     phone:     raw.phone     ?? null,
     email:     raw.email     ?? null,
     company:   raw.company   ?? null,
+    title:     raw.title     ?? null,
   };
 }
 
@@ -325,6 +343,7 @@ export const CONTACT_FIELDS: ContactField[] = [
   'email',
   'phone',
   'company',
+  'title',
 ];
 
 /** Human-readable labels for each ContactField, used in the mapping UI. */
@@ -335,4 +354,6 @@ export const FIELD_LABELS: Record<ContactField, string> = {
   email:     'Email',
   phone:     'Phone',
   company:   'Company / Org',
+  title:     'Job Title',
 };
+

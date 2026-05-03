@@ -10,6 +10,19 @@ export interface ParseResult {
 }
 
 /**
+ * Clean up text extracted from the spreadsheet:
+ * - Replace non-breaking spaces with normal spaces
+ * - Remove hidden directional marks (LRE, PDF, LRM, RLM) often found in copied phone numbers
+ * - Remove Zero-Width spaces and BOMs
+ */
+function cleanString(val: string): string {
+  return val
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
+    .trim();
+}
+
+/**
  * Parse a CSV or XLSX File into structured row data.
  *
  * Uses SheetJS for both formats — consistent behaviour, no separate CSV
@@ -22,7 +35,10 @@ export interface ParseResult {
 export async function parseSpreadsheet(file: File): Promise<ParseResult> {
   const buffer = await file.arrayBuffer();
 
-  const workbook = XLSX.read(buffer, { type: 'array' });
+  // codepage: 65001 forces UTF-8 for CSV files missing a Byte Order Mark.
+  // This prevents UTF-8 characters (like directional markers) from turning
+  // into Mojibake (e.g. â€¬).
+  const workbook = XLSX.read(buffer, { type: 'array', codepage: 65001 });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
 
@@ -39,19 +55,26 @@ export async function parseSpreadsheet(file: File): Promise<ParseResult> {
 
   // First row is headers; remaining rows are data
   const [headerRow, ...dataRows] = raw;
-  const headers = headerRow.map((h) => String(h).trim()).filter(Boolean);
+  
+  const validHeaders: { name: string; index: number }[] = [];
+  headerRow.forEach((h, index) => {
+    const name = cleanString(String(h));
+    if (name) validHeaders.push({ name, index });
+  });
 
-  if (headers.length === 0) {
+  if (validHeaders.length === 0) {
     throw new Error('No column headers found in the first row.');
   }
 
+  const headers = validHeaders.map((vh) => vh.name);
+
   const rows: Record<string, string>[] = dataRows
     // Skip fully blank rows
-    .filter((row) => row.some((cell) => String(cell).trim() !== ''))
+    .filter((row) => row.some((cell) => cleanString(String(cell)) !== ''))
     .map((row) => {
       const record: Record<string, string> = {};
-      headers.forEach((header, i) => {
-        record[header] = String(row[i] ?? '').trim();
+      validHeaders.forEach(({ name, index }) => {
+        record[name] = cleanString(String(row[index] ?? ''));
       });
       return record;
     });

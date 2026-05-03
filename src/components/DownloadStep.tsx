@@ -1,49 +1,97 @@
 // ---------------------------------------------------------------------------
-// DownloadStep.tsx — Step 3: Review summary and download the .vcf file
+// DownloadStep.tsx — Step 3: Download the generated .vcf file
 // ---------------------------------------------------------------------------
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { ColumnMapping } from '../types/contact';
+import { downloadVCF } from '../utils/generateVCard';
+import { btnPrimary, btnSecondary, NAVY } from '../styles/buttons';
+import AppHeading from './AppHeading';
 
 interface DownloadStepProps {
-  /** All rows from the parsed spreadsheet */
   rows: Record<string, string>[];
-  /** The confirmed field → column mapping */
   mapping: ColumnMapping;
-  /** Allow the user to go back and adjust the mapping */
-  onBack: () => void;
-  /** Called when the user wants to start over with a new file */
   onReset: () => void;
 }
 
-/**
- * Step 3 — Show a summary (number of contacts, mapped fields) and a
- * "Download .vcf" button that triggers the file generation.
- *
- * TODO: implement
- *   - Display total contact count (rows.length)
- *   - List which fields are included in the export
- *   - "Download .vcf" button calls downloadVCF(rows, mapping)
- *   - "Back" button calls onBack()
- *   - "Start over" / "Upload new file" calls onReset()
- *   - Optional: show a small preview of the first vCard
- */
 const DownloadStep: React.FC<DownloadStepProps> = ({
-  rows: _rows,
-  mapping: _mapping,
-  onBack: _onBack,
-  onReset: _onReset,
+  rows,
+  mapping,
+  onReset,
 }) => {
+  const [error, setError] = useState<string | null>(null);
+  const [exported, setExported] = useState<number | null>(null);
+
+  const handleDownload = () => {
+    setError(null);
+    try {
+      const result = downloadVCF(rows, mapping, 'contacts.vcf');
+      setExported(result.exported);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate file.');
+    }
+  };
+
   return (
-    <section className="flex flex-col items-center gap-6 py-16 text-center">
-      {/* Placeholder UI — replace during implementation */}
-      <p className="text-white/40 text-sm">
-        Download step — not yet implemented
-      </p>
-      <p className="text-white/20 text-xs">
-        Will show contact count + download button here
-      </p>
-    </section>
+    <div className="flex flex-col items-center gap-10">
+      <AppHeading />
+
+      <div className="w-full max-w-sm flex flex-col gap-6">
+        <p className="text-sm font-bold tracking-wide text-center" style={{ color: NAVY }}>
+          4. Download contact cards
+        </p>
+
+        <div className="text-center text-sm" style={{ color: NAVY, opacity: 0.6 }}>
+          {rows.length} row{rows.length !== 1 ? 's' : ''} ready to export
+        </div>
+
+        {exported !== null && (
+          <div
+            className="rounded-2xl px-5 py-4 flex flex-col items-center gap-1.5 text-center"
+            style={{ background: 'rgba(255,255,255,0.55)', border: '1.5px solid rgba(13,13,94,0.12)' }}
+          >
+            <span
+              className="text-2xl font-bold tracking-tight"
+              style={{ color: NAVY }}
+            >
+              {exported} contact{exported !== 1 ? 's' : ''} saved
+            </span>
+            <span
+              className="text-xs font-medium leading-relaxed"
+              style={{ color: NAVY, opacity: 0.55 }}
+            >
+              Open the .vcf file and share it in an iMessage group chat. Recipients will be able to save everyone at once.
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-xs font-medium text-center" style={{ color: '#c0392b' }}>
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <button
+            id="btn-download"
+            type="button"
+            className={btnPrimary}
+            onClick={handleDownload}
+          >
+            Download VCF
+          </button>
+
+          <button
+            id="btn-start-over"
+            type="button"
+            className={btnSecondary}
+            onClick={onReset}
+          >
+            Upload a different file
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

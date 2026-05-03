@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 
 import UploadStep from './components/UploadStep';
 import ColumnMappingStep from './components/ColumnMappingStep';
+import PreviewStep from './components/PreviewStep';
 import DownloadStep from './components/DownloadStep';
 
 import { detectColumns } from './utils/detectColumns';
@@ -54,12 +55,18 @@ const App: React.FC = () => {
 
   const handleMappingConfirmed = (confirmedMapping: ColumnMapping) => {
     setData((prev) => ({ ...prev, mapping: confirmedMapping }));
+    setStep('preview');
+  };
+
+  // ----- Step 3 → 4 -------------------------------------------------------
+
+  const handlePreviewConfirmed = () => {
     setStep('download');
   };
 
   // ----- Back navigation --------------------------------------------------
 
-  const handleBackToUpload  = () => setStep('upload');
+  const handleBackToUpload = () => setStep('upload');
   const handleBackToMapping = () => setStep('mapping');
 
   // ----- Reset ------------------------------------------------------------
@@ -92,11 +99,19 @@ const App: React.FC = () => {
           />
         )}
 
+        {step === 'preview' && (
+          <PreviewStep
+            rows={data.rows}
+            mapping={data.mapping}
+            onNext={handlePreviewConfirmed}
+            onBack={handleBackToMapping}
+          />
+        )}
+
         {step === 'download' && (
           <DownloadStep
             rows={data.rows}
             mapping={data.mapping}
-            onBack={handleBackToMapping}
             onReset={handleReset}
           />
         )}
